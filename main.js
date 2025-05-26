@@ -4,18 +4,36 @@ const { createApp, ref, computed, onMounted, watch } = Vue;
 const App = {
   setup() {
     // --- リアクティブなデータ ---
-    const appTitle = ref('SAP 解説ドキュメント');
+    const appTitle = ref('Vue.js ガイド風ドキュメント'); // Title updated
     const docsData = ref([]); // { id: string, title: string, content: string }
     const selectedDocId = ref(null);
-    const isEditMode = ref(false);
-    const editingContent = ref(''); // <textarea> とバインドする編集中のコンテンツ
+    // isEditMode ref was here
+    // editingContent ref was here
     const vueLoaded = ref(false); // index.htmlのローディングメッセージ制御用
 
     // --- 初期データ ---
     const initialDocs = [
-      { id: 'sap-overview', title: 'SAPの概要', content: '<h1>SAPの概要</h1><p>SAPは、企業の業務効率化を支援する主要なERPソフトウェアプロバイダーです。...</p><ul><li>基幹業務システム</li><li>リアルタイムデータ処理</li></ul>' },
-      { id: 's4hana-intro', title: 'SAP S/4HANAとは', content: '<h1>SAP S/4HANAとは</h1><p>SAP S/4HANAは、インメモリデータベースSAP HANAを基盤とした次世代のERPスイートです。...</p><p>主な特徴:</p><ol><li>インメモリコンピューティング</li><li>最新のUX (SAP Fiori)</li><li>クラウドおよびオンプレミス展開</li></ol>' },
-      { id: 'sap-modules', title: '主要モジュール一覧', content: '<h1>主要モジュール一覧</h1><p>SAP ERPは多くのモジュールで構成されています。</p><ul><li><strong>FI:</strong> 財務会計</li><li><strong>CO:</strong> 管理会計</li><li><strong>SD:</strong> 販売管理</li><li><strong>MM:</strong> 在庫購買管理</li><li><strong>PP:</strong> 生産計画/管理</li><li><strong>HR/HCM:</strong> 人事管理</li></ul>' }
+      // はじめに
+      { id: 'introduction', title: 'はじめに', content: '<h1>はじめに</h1><p>Vue.js へようこそ。これはプログレッシブフレームワークについての説明です。</p>' },
+      { id: 'quick-start', title: 'クイックスタート', content: '<h1>クイックスタート</h1><p>Vue.js を素早く始めるためのガイドです。CDNまたはビルドツールを使用します。</p><h2>CDNからの利用</h2><p><code>&lt;script&gt;</code>タグでVueを読み込むことができます。</p><h2>プロジェクト作成</h2><p><code>npm create vue@latest</code> を使用してプロジェクトをセットアップします。</p>' },
+      // 基礎
+      { id: 'essentials-create-app', title: 'アプリケーションの作成', content: '<h1>アプリケーションの作成</h1><p>すべての Vue アプリケーションは、<code>createApp</code> 関数で新しいアプリケーションインスタンスを作成することから始まります。</p><p><code>const app = Vue.createApp({})</code></p>' },
+      { id: 'essentials-template-syntax', title: 'テンプレート構文', content: '<h1>テンプレート構文</h1><p>Vue は HTML ベースのテンプレート構文を使用します。データバインディングの基本は Mustache 構文 (二重中括弧) です: <code>{{ message }}</code></p><h2>属性バインディング</h2><p><code>v-bind:attributeName</code> または省略形 <code>:attributeName</code> を使用します。</p>' },
+      { id: 'essentials-reactivity', title: 'リアクティビティの基礎', content: '<h1>リアクティビティの基礎</h1><p>Vue のリアクティビティシステムについて。<code>ref()</code> や <code>reactive()</code> を使用してリアクティブなデータを作成します。</p>' },
+      { id: 'essentials-computed', title: '算出プロパティ', content: '<h1>算出プロパティ</h1><p>テンプレート内で複雑なロジックを記述する代わりに算出プロパティを使用します。依存関係に基づいてキャッシュされます。</p><p>例: <code>const publishedBooksMessage = computed(() => { return author.books.length > 0 ? \'Yes\' : \'No\' })</code></p>' },
+      { id: 'essentials-class-style', title: 'クラスとスタイルのバインディング', content: '<h1>クラスとスタイルのバインディング</h1><p><code>v-bind:class</code> (または <code>:class</code>) と <code>v-bind:style</code> (または <code>:style</code>) を使用して、HTML 要素のクラスやインラインスタイルを動的に操作します。</p>' },
+      { id: 'essentials-conditional', title: '条件付きレンダリング', content: '<h1>条件付きレンダリング</h1><p><code>v-if</code>, <code>v-else-if</code>, <code>v-else</code> ディレクティブを使用して、条件に基づいてブロックをレンダリングします。<code>v-show</code> も利用可能です。</p>' },
+      { id: 'essentials-list', title: 'リストレンダリング', content: '<h1>リストレンダリング</h1><p><code>v-for</code> ディレクティブを使用して、配列に基づいてアイテムのリストをレンダリングします。</p><p>例: <code>&lt;li v-for="item in items" :key="item.id"&gt;{{ item.text }}&lt;/li&gt;</code></p>' },
+      { id: 'essentials-event-handling', title: 'イベントハンドリング', content: '<h1>イベントハンドリング</h1><p><code>v-on</code> ディレクティブ (または <code>@</code>) を使用して DOM イベントをリッスンし、イベント発生時に JavaScript を実行します。</p><p>例: <code>&lt;button @click="counter++"&gt;Add 1&lt;/button&gt;</code></p>' },
+      { id: 'essentials-form-input', title: 'フォーム入力バインディング', content: '<h1>フォーム入力バインディング</h1><p><code>v-model</code> ディレクティブを使用して、フォームの input, textarea, select 要素に双方向データバインディングを作成します。</p>' },
+      { id: 'essentials-lifecycle-hooks', title: 'ライフサイクルフック', content: '<h1>ライフサイクルフック</h1><p>コンポーネントのライフサイクルの特定の段階で実行される関数です。例: <code>onMounted</code>, <code>onUpdated</code>, <code>onUnmounted</code>。</p>' },
+      // コンポーネント
+      { id: 'components-basics', title: 'コンポーネントの基本', content: '<h1>コンポーネントの基本</h1><p>コンポーネントは再利用可能な Vue インスタンスです。独自のカスタム要素として使用できます。</p>' },
+      { id: 'components-props', title: 'Props', content: '<h1>Props</h1><p>Props は親コンポーネントから子コンポーネントにデータを渡すためのカスタム属性です。</p>' },
+      { id: 'components-events', title: 'イベント ($emit)', content: '<h1>イベント ($emit)</h1><p>子コンポーネントが親コンポーネントと通信するための手段です。<code>$emit</code> を使用してカスタムイベントを発行します。</p>' },
+      // { id: 'components-slots', title: 'スロット', content: '<h1>スロット</h1><p>親コンポーネントから子コンポーネントにテンプレートの断片を渡すための仕組みです。</p>' },
+      // その他 (余裕があれば)
+      // { id: 'composition-api-intro', title: 'コンポジションAPIとは', content: '<h1>コンポジションAPIとは</h1><p>より柔軟で再利用可能なロジックを作成するためのAPIセットです。</p>' },
     ];
 
     // --- ローカルストレージ関連 ---
@@ -54,82 +72,39 @@ const App = {
     // --- メソッド ---
     const selectDoc = (id) => {
       selectedDocId.value = id;
-      // The watcher for [isEditMode, currentDocument] handles editingContent update.
-      // if (isEditMode.value && currentDocument.value) { 
-      //   editingContent.value = currentDocument.value.content; 
-      // }
+      // Edit mode related logic removed
     };
 
     const goHome = () => {
         selectedDocId.value = null;
-        isEditMode.value = false; // ホーム表示時は編集モード解除
+        // Edit mode related logic removed (isEditMode.value = false;)
     };
 
-    const toggleEditMode = () => {
-      isEditMode.value = !isEditMode.value;
-      // The watcher for [isEditMode, currentDocument] handles editingContent update.
-      // if (isEditMode.value && currentDocument.value) {
-      //   editingContent.value = currentDocument.value.content; 
-      // } else if (!isEditMode.value) {
-      // }
-    };
-
-    const saveContentChanges = () => {
-      if (currentDocument.value) {
-        const docIndex = docsData.value.findIndex(doc => doc.id === currentDocument.value.id);
-        if (docIndex !== -1) {
-          const updatedDoc = { ...docsData.value[docIndex], content: editingContent.value };
-          const newDocsData = [...docsData.value];
-          newDocsData[docIndex] = updatedDoc;
-          docsData.value = newDocsData; // This triggers the watch for docsData to save to localStorage
-          // isEditMode.value = false; // Optionally exit edit mode after save
-          alert('コンテンツが保存されました！');
-        }
-      }
-    };
-    
-    const checkUrlParams = () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('edit') === 'true') {
-            isEditMode.value = true; // This will trigger the watcher for isEditMode
-        }
-    };
+    // toggleEditMode method removed
+    // saveContentChanges method removed
+    // checkUrlParams method removed (as it only handled edit mode)
 
     // --- ライフサイクルフック ---
     onMounted(() => {
       loadDocs();
-      checkUrlParams(); 
-      // Initial population of editingContent if starting in edit mode is handled by the watcher.
+      // checkUrlParams call removed
       vueLoaded.value = true; // Vueの準備完了
     });
     
-    // Watch for changes in isEditMode or currentDocument to update editingContent
-    watch([isEditMode, currentDocument], ([newEditMode, newDoc], [oldEditMode, oldDoc]) => {
-        if (newEditMode && newDoc) {
-            // Entering edit mode OR changing doc while in edit mode
-            // Update editingContent if the document changed or if we just entered edit mode for the current doc
-            if (newDoc.id !== oldDoc?.id || (newEditMode && !oldEditMode)) {
-                 editingContent.value = newDoc.content;
-            }
-        } else if (!newEditMode && oldEditMode) {
-            // Exiting edit mode
-            // Optionally clear editingContent or handle unsaved changes confirmation here
-            // For example: editingContent.value = ''; 
-        }
-    }, { immediate: false }); // immediate: false to avoid running on initial mount before docs are loaded
+    // Watcher for [isEditMode, currentDocument] removed
 
     // --- テンプレートに公開 ---
     return {
       appTitle,
       docsData,
       selectedDocId,
-      isEditMode,
-      editingContent,
+      // isEditMode removed from return
+      // editingContent removed from return
       currentDocument,
       selectDoc,
       goHome,
-      toggleEditMode,
-      saveContentChanges,
+      // toggleEditMode removed from return
+      // saveContentChanges removed from return
       vueLoaded
     };
   },
@@ -154,22 +129,11 @@ const App = {
             </aside>
 
             <main class="app-content">
-                <div class="edit-mode-controls" v-if="docsData.length > 0 && selectedDocId">
-                    <!-- Show controls only if there's a document selected -->
-                    <span class="toggle-switch-label">編集モード:</span>
-                    <label class="switch">
-                        <!-- Use v-model directly on isEditMode. The watcher handles the logic. -->
-                        <input type="checkbox" v-model="isEditMode">
-                        <span class="slider"></span>
-                    </label>
-                </div>
+                <!-- Edit mode controls UI removed -->
 
                 <div v-if="currentDocument">
-                    <div v-if="!isEditMode" v-html="currentDocument.content"></div>
-                    <div v-if="isEditMode">
-                        <textarea v-model="editingContent" class="editor-textarea"></textarea>
-                        <button @click="saveContentChanges" class="save-button">変更を保存</button>
-                    </div>
+                    <!-- Always display content, no edit mode toggle -->
+                    <div v-html="currentDocument.content"></div>
                 </div>
                 <div v-else>
                     <h2>{{ appTitle }} へようこそ</h2>
