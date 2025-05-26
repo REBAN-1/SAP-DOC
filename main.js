@@ -1,277 +1,185 @@
 // main.js
 const { createApp, ref, computed, onMounted, watch } = Vue;
-const { Layout, Menu, Input, Button, Breadcrumb, Switch: ASwitch } = antd; // Use ASwitch to avoid conflict with JS Switch
 
 const App = {
-  components: {
-    'a-layout': Layout,
-    'a-layout-header': Layout.Header,
-    'a-layout-sider': Layout.Sider,
-    'a-layout-content': Layout.Content,
-    'a-menu': Menu,
-    'a-menu-item': Menu.Item,
-    'a-input-search': Input.Search,
-    'a-textarea': Input.TextArea,
-    'a-button': Button,
-    'a-breadcrumb': Breadcrumb,
-    'a-breadcrumb-item': Breadcrumb.Item,
-    'a-switch': ASwitch,
-  },
   setup() {
-    // Placeholder for data properties
-    const appTitle = ref('SAP Documentation Hub');
+    // --- リアクティブなデータ ---
+    const appTitle = ref('SAP 解説ドキュメント');
+    const docsData = ref([]); // { id: string, title: string, content: string }
     const selectedDocId = ref(null);
-    const docsData = ref([]);
     const isEditMode = ref(false);
-    const searchTerm = ref(''); // For search bar
-    const editingContent = ref(''); // Buffer for text area in edit mode
+    const editingContent = ref(''); // <textarea> とバインドする編集中のコンテンツ
+    const vueLoaded = ref(false); // index.htmlのローディングメッセージ制御用
 
+    // --- 初期データ ---
     const initialDocs = [
-      { id: 'sap-overview', title: 'SAP Overview', content: '<h1>SAP Overview</h1><p>SAP is a leading provider of enterprise resource planning (ERP) software. Its solutions are widely used by companies of all sizes to manage business operations and customer relations.</p><p>Key benefits include improved data management, streamlined processes, and enhanced decision-making capabilities.</p>' },
-      { id: 's4hana-intro', title: 'S/4HANA Introduction', content: '<h1>SAP S/4HANA</h1><p>SAP S/4HANA is the next-generation ERP suite built on the SAP HANA in-memory database. It offers a simplified data model, a modern user experience with SAP Fiori, and advanced analytics capabilities.</p><p>Core features include real-time processing, embedded AI, and integration with other SAP cloud solutions.</p>' },
-      { id: 'key-modules', title: 'Key SAP Modules', content: '<h1>Key SAP Modules</h1><p>SAP ERP is composed of several core modules, each designed to manage specific business functions:</p><ul><li><b>FI (Financial Accounting):</b> Manages financial transactions, general ledger, accounts payable/receivable, and financial reporting.</li><li><b>CO (Controlling):</b> Focuses on cost management, profitability analysis, and internal orders.</li><li><b>SD (Sales and Distribution):</b> Handles sales processes, order management, shipping, and billing.</li><li><b>MM (Materials Management):</b> Manages procurement, inventory, and material valuation.</li><li><b>PP (Production Planning):</b> Oversees production processes, capacity planning, and material requirements planning.</li><li><b>HR (Human Resources)/HCM (Human Capital Management):</b> Manages payroll, personnel administration, talent management, and time recording.</li></ul>' }
+      { id: 'sap-overview', title: 'SAPの概要', content: '<h1>SAPの概要</h1><p>SAPは、企業の業務効率化を支援する主要なERPソフトウェアプロバイダーです。...</p><ul><li>基幹業務システム</li><li>リアルタイムデータ処理</li></ul>' },
+      { id: 's4hana-intro', title: 'SAP S/4HANAとは', content: '<h1>SAP S/4HANAとは</h1><p>SAP S/4HANAは、インメモリデータベースSAP HANAを基盤とした次世代のERPスイートです。...</p><p>主な特徴:</p><ol><li>インメモリコンピューティング</li><li>最新のUX (SAP Fiori)</li><li>クラウドおよびオンプレミス展開</li></ol>' },
+      { id: 'sap-modules', title: '主要モジュール一覧', content: '<h1>主要モジュール一覧</h1><p>SAP ERPは多くのモジュールで構成されています。</p><ul><li><strong>FI:</strong> 財務会計</li><li><strong>CO:</strong> 管理会計</li><li><strong>SD:</strong> 販売管理</li><li><strong>MM:</strong> 在庫購買管理</li><li><strong>PP:</strong> 生産計画/管理</li><li><strong>HR/HCM:</strong> 人事管理</li></ul>' }
     ];
 
-    // Placeholder for computed properties
+    // --- ローカルストレージ関連 ---
+    const STORAGE_KEY = 'sapDocsCustom';
+
+    const loadDocs = () => {
+      const storedDocs = localStorage.getItem(STORAGE_KEY);
+      if (storedDocs) {
+        try {
+          docsData.value = JSON.parse(storedDocs);
+        } catch (e) {
+          console.error('ローカルストレージのデータの解析に失敗しました:', e);
+          docsData.value = [...initialDocs]; // パース失敗時は初期データ
+        }
+      } else {
+        docsData.value = [...initialDocs];
+      }
+      // デフォルトで最初のドキュメントを選択 (もしあれば)
+      if (docsData.value.length > 0 && !selectedDocId.value) {
+        selectedDocId.value = docsData.value[0].id;
+      }
+    };
+
+    const saveDocs = () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(docsData.value));
+    };
+
+    // docsDataが変更されたらローカルストレージに保存
+    watch(docsData, saveDocs, { deep: true });
+
+    // --- 算出プロパティ ---
     const currentDocument = computed(() => {
-      // Now directly returns the document object or null. Editing is handled by editingContent.
-      if (!selectedDocId.value || docsData.value.length === 0) return null;
-      return docsData.value.find(d => d.id === selectedDocId.value) || null;
+      return docsData.value.find(doc => doc.id === selectedDocId.value) || null;
     });
 
-    // Placeholder for methods
+    // --- メソッド ---
     const selectDoc = (id) => {
       selectedDocId.value = id;
-      // If in edit mode, also update editingContent for the new document
-      // This is now handled by watch(selectedDocId, ...)
+      // The watcher for [isEditMode, currentDocument] handles editingContent update.
+      // if (isEditMode.value && currentDocument.value) { 
+      //   editingContent.value = currentDocument.value.content; 
+      // }
+    };
+
+    const goHome = () => {
+        selectedDocId.value = null;
+        isEditMode.value = false; // ホーム表示時は編集モード解除
     };
 
     const toggleEditMode = () => {
       isEditMode.value = !isEditMode.value;
-      // Logic for populating editingContent is now handled by watch(isEditMode, ...)
+      // The watcher for [isEditMode, currentDocument] handles editingContent update.
+      // if (isEditMode.value && currentDocument.value) {
+      //   editingContent.value = currentDocument.value.content; 
+      // } else if (!isEditMode.value) {
+      // }
     };
 
-    const internalSaveContent = () => {
-      if (!selectedDocId.value || !currentDocument.value) {
-        console.error('No document selected or current document is invalid.'); // Keep for error diagnosis
-        return;
-      }
-      // console.log('Save content initiated for document:', selectedDocId.value); // For debugging
-      const docIndex = docsData.value.findIndex(doc => doc.id === selectedDocId.value);
-      if (docIndex !== -1) {
-        // Create a new array for reactivity, with the updated document content
-        const updatedDocs = [...docsData.value];
-        updatedDocs[docIndex] = { ...updatedDocs[docIndex], content: editingContent.value };
-        docsData.value = updatedDocs;
-        // console.log('Document content updated in docsData for ID:', selectedDocId.value); // For debugging
-      } else {
-        console.error('Failed to find document in docsData for saving:', selectedDocId.value); // Keep for error diagnosis
-      }
-    };
-
-    const internalOnSearch = (searchValue) => {
-        // console.log('Search initiated with:', searchValue); // For debugging search functionality
-        // Actual search logic will be implemented later
-        // For now, it can filter docsData based on title (case-insensitive)
-        if (!searchValue) {
-            // If search is cleared, potentially reload original docs or handle as needed
-            // This depends on how docsData is initially populated vs. filtered
-            return;
+    const saveContentChanges = () => {
+      if (currentDocument.value) {
+        const docIndex = docsData.value.findIndex(doc => doc.id === currentDocument.value.id);
+        if (docIndex !== -1) {
+          const updatedDoc = { ...docsData.value[docIndex], content: editingContent.value };
+          const newDocsData = [...docsData.value];
+          newDocsData[docIndex] = updatedDoc;
+          docsData.value = newDocsData; // This triggers the watch for docsData to save to localStorage
+          // isEditMode.value = false; // Optionally exit edit mode after save
+          alert('コンテンツが保存されました！');
         }
-        // This is a simple filter example, might need more robust implementation
-        docsData.value = docsData.value.filter(doc =>
-            doc.title.toLowerCase().includes(searchValue.toLowerCase())
-        );
+      }
+    };
+    
+    const checkUrlParams = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('edit') === 'true') {
+            isEditMode.value = true; // This will trigger the watcher for isEditMode
+        }
     };
 
-
-    // Placeholder for lifecycle hooks
+    // --- ライフサイクルフック ---
     onMounted(() => {
-      // console.log('Vue App Mounted'); // Redundant for production
-      const storedDocs = localStorage.getItem('sapDocsContent');
-      if (storedDocs) {
-        try {
-          const parsedDocs = JSON.parse(storedDocs);
-          if (Array.isArray(parsedDocs) && parsedDocs.length > 0) {
-            docsData.value = parsedDocs;
-            // console.log('Loaded docsData from local storage.'); // For debugging
-          } else {
-            // console.log('Local storage data is empty or invalid, using initialDocs.'); // For debugging
-            docsData.value = initialDocs;
-          }
-        } catch (e) {
-          console.error('Failed to parse docsData from local storage, using initialDocs:', e); // Keep for error diagnosis
-          docsData.value = initialDocs;
-        }
-      } else {
-        // console.log('No docsData in local storage, using initialDocs.'); // For debugging
-        docsData.value = initialDocs;
-      }
-
-      // Ensure a document is selected if possible
-      if (!selectedDocId.value && docsData.value.length > 0) {
-        const firstDocId = docsData.value[0].id;
-        if (docsData.value.some(doc => doc.id === firstDocId)) {
-             selectedDocId.value = firstDocId;
-        } else if (docsData.value.length > 0) {
-            selectedDocId.value = docsData.value[0].id;
-        }
-      } else if (selectedDocId.value && docsData.value.length > 0) {
-        if (!docsData.value.some(doc => doc.id === selectedDocId.value)) {
-            selectedDocId.value = docsData.value[0].id; 
-        }
-      } else if (docsData.value.length === 0) {
-        selectedDocId.value = null;
-      }
-
-      // Check for URL parameter to enable edit mode
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('edit') === 'true') {
-        isEditMode.value = true; // This will trigger the watch for isEditMode
-      }
-    });
-
-    // Watch for changes in docsData and save to local storage
-    watch(docsData, (newDocs) => {
-      try {
-        localStorage.setItem('sapDocsContent', JSON.stringify(newDocs));
-        // console.log('docsData saved to local storage'); // For debugging
-      } catch (e) {
-        console.error('Failed to save docsData to local storage:', e); // Keep for error diagnosis
-      }
-    }, { deep: true });
-
-    // Watch for changes in selectedDocId to update editingContent if in edit mode
-    watch(selectedDocId, (newId, oldId) => {
-      if (isEditMode.value && newId) {
-        const doc = docsData.value.find(d => d.id === newId);
-        if (doc) {
-          editingContent.value = doc.content;
-        } else {
-          editingContent.value = ''; // Reset if new doc not found
-        }
-      }
+      loadDocs();
+      checkUrlParams(); 
+      // Initial population of editingContent if starting in edit mode is handled by the watcher.
+      vueLoaded.value = true; // Vueの準備完了
     });
     
-    // Watch for changes in isEditMode to populate editingContent
-    watch(isEditMode, (newVal) => {
-        if (newVal === true) { // Entering edit mode
-            if (currentDocument.value) {
-                editingContent.value = currentDocument.value.content;
-            } else {
-                editingContent.value = ''; // No document selected
+    // Watch for changes in isEditMode or currentDocument to update editingContent
+    watch([isEditMode, currentDocument], ([newEditMode, newDoc], [oldEditMode, oldDoc]) => {
+        if (newEditMode && newDoc) {
+            // Entering edit mode OR changing doc while in edit mode
+            // Update editingContent if the document changed or if we just entered edit mode for the current doc
+            if (newDoc.id !== oldDoc?.id || (newEditMode && !oldEditMode)) {
+                 editingContent.value = newDoc.content;
             }
+        } else if (!newEditMode && oldEditMode) {
+            // Exiting edit mode
+            // Optionally clear editingContent or handle unsaved changes confirmation here
+            // For example: editingContent.value = ''; 
         }
-        // No specific action needed when exiting edit mode regarding editingContent
-    });
+    }, { immediate: false }); // immediate: false to avoid running on initial mount before docs are loaded
 
-    const goHome = () => {
-      selectedDocId.value = null;
-      isEditMode.value = false; // Exit edit mode when going home
-      // editingContent.value = ''; // Optionally clear editing content
-    };
-
+    // --- テンプレートに公開 ---
     return {
       appTitle,
-      selectedDocId,
       docsData,
+      selectedDocId,
       isEditMode,
-      editingContent, // Expose editingContent to the template
-      searchTerm,
+      editingContent,
       currentDocument,
       selectDoc,
+      goHome,
       toggleEditMode,
-      saveContent: internalSaveContent, 
-      onSearch: internalOnSearch,
-      goHome, // Expose goHome to the template
+      saveContentChanges,
+      vueLoaded
     };
   },
+  // HTMLテンプレート (style.cssで定義したクラス名を使用)
   template: `
-    <a-layout style="min-height: 100vh;">
-      <a-layout-header class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-          <h1 style="color: white;">{{ appTitle }}</h1>
-          <div>
-            <a-input-search
-              v-model:value="searchTerm"
-              placeholder="Search docs..."
-              style="width: 200px; margin-right: 16px;"
-              @search="onSearch"
-            />
-            <span style="margin-right: 8px; color: white;">Edit Mode:</span>
-            <a-switch v-model:checked="isEditMode" @change="toggleEditMode" />
-          </div>
-        </div>
-      </a-layout-header>
-      <a-layout class="app-layout">
-        <a-layout-sider width="250" class="sidebar" theme="light">
-          <a-menu
-            v-model:selectedKeys="[selectedDocId]"
-            mode="inline"
-            @click="({ key }) => selectDoc(key)"
-          >
-            <a-menu-item v-if="docsData.length === 0" key="loading" disabled>
-              Loading docs...
-            </a-menu-item>
-            <a-menu-item v-for="doc in docsData" :key="doc.id">
-              {{ doc.title }}
-            </a-menu-item>
-          </a-menu>
-        </a-layout-sider>
-        <a-layout-content class="content-area">
-          <!-- Breadcrumbs -->
-          <a-breadcrumb style="margin-bottom: 16px;">
-            <a-breadcrumb-item><a @click="goHome" style="cursor: pointer;">Home</a></a-breadcrumb-item>
-            <a-breadcrumb-item v-if="currentDocument">{{ currentDocument.title }}</a-breadcrumb-item>
-          </a-breadcrumb>
+    <div v-if="vueLoaded" style="display: flex; flex-direction: column; height: 100%;">
+        <header class="app-header">
+            <h1>{{ appTitle }}</h1>
+        </header>
 
-          <div v-if="currentDocument">
-            <h2>{{ currentDocument.title }}</h2>
-            <div v-if="!isEditMode" v-html="currentDocument.content"></div>
-            <div v-if="isEditMode">
-              <a-textarea
-                v-model:value="editingContent"
-                :rows="15"
-                class="editor-textarea"
-              />
-              <a-button type="primary" @click="saveContent" style="margin-top: 10px;">
-                Save Changes
-              </a-button>
-            </div>
-          </div>
-          <div v-else>
-            <!-- Content to show when no document is selected (e.g., after clicking Home) -->
-            <h2>Welcome to {{ appTitle }}</h2>
-            <p>Select a document from the sidebar to view its content, or start by exploring our documentation.</p>
-            <p v-if="docsData.length === 0">It seems there are no documents loaded. Check the console for errors or try refreshing.</p>
-          </div>
-        </a-layout-content>
-      </a-layout>
-    </a-layout>
+        <div class="app-main-layout">
+            <aside class="app-sidebar">
+                <h2>目次</h2>
+                <ul>
+                    <li><a href="#" @click.prevent="goHome" :class="{ active: !selectedDocId }">ホーム</a></li>
+                    <li v-for="doc in docsData" :key="doc.id">
+                        <a href="#" @click.prevent="selectDoc(doc.id)" :class="{ active: doc.id === selectedDocId }">
+                            {{ doc.title }}
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+
+            <main class="app-content">
+                <div class="edit-mode-controls" v-if="docsData.length > 0 && selectedDocId">
+                    <!-- Show controls only if there's a document selected -->
+                    <span class="toggle-switch-label">編集モード:</span>
+                    <label class="switch">
+                        <!-- Use v-model directly on isEditMode. The watcher handles the logic. -->
+                        <input type="checkbox" v-model="isEditMode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div v-if="currentDocument">
+                    <div v-if="!isEditMode" v-html="currentDocument.content"></div>
+                    <div v-if="isEditMode">
+                        <textarea v-model="editingContent" class="editor-textarea"></textarea>
+                        <button @click="saveContentChanges" class="save-button">変更を保存</button>
+                    </div>
+                </div>
+                <div v-else>
+                    <h2>{{ appTitle }} へようこそ</h2>
+                    <p>左のメニューからドキュメントを選択して表示します。</p>
+                    <p v-if="docsData.length === 0">現在表示できるドキュメントがありません。</p>
+                </div>
+            </main>
+        </div>
+    </div>
   `
 };
 
-const app = createApp(App);
-
-// Register Ant Design components globally (alternative to declaring in each component)
-// app.use(antd); // This might be needed if components are not resolving
-
-app.mount('#app');
-
-// Global placeholder functions below are no longer needed as their logic
-// has been integrated into the Vue app's setup context or are not used.
-/*
-function onSearch(searchValue) {
-  // console.log('Global Search initiated with:', searchValue); // For debugging
-  // This function is a placeholder and not directly wired into the Vue app's event handling.
-  // The Vue app uses `internalOnSearch` from its `setup` context.
-}
-
-function saveContent() {
-  // console.log('Global Save content initiated.'); // For debugging
-  // This function is a placeholder and not directly wired into the Vue app's event handling.
-  // The Vue app uses `internalSaveContent` from its `setup` context.
-  // It would need access to `this.currentDocument` which is not available here.
-}
-*/
-```
+createApp(App).mount('#app');

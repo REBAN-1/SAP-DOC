@@ -1,26 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAP Documentation</title>
+    <title>SAP 解説ドキュメント</title>
 
-    <!-- Ant Design Vue CSS (Using jsDelivr's reset.css for v4.2.1, no integrity for now) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ant-design-vue@4.2.1/dist/reset.css">
-
-    <!-- Vue.js (v3.4.27, using integrity from user's error log) -->
+    <!-- Vue.js CDN (v3.4.27, using integrity from user's previous error log) -->
     <script src="https://cdn.jsdelivr.net/npm/vue@3.4.27/dist/vue.global.prod.js" integrity="sha256-VMrHpvwhhCKPXCaAPunCoWMozbWKGCjzejy8voYbGOs=" crossorigin="anonymous"></script>
-
-    <!-- Ant Design Vue JS (v4.2.1, using integrity from user's error log, from cdnjs) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ant-design-vue/4.2.1/antd.min.js" integrity="sha512-068kci4p8tkJgoD2d9aCf/6W6SfIIhUqvV1QrxQZep+Bb7abawyGGqHCyYRCJa/IRB3D5Iw9ZCECAklXtS0efQ==" crossorigin="anonymous"></script>
-
-    <!-- Ant Design Icons Vue (Removed for now to isolate issues) -->
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app"></div>
+    <div id="app">
+        <!-- Vue.js application will be mounted here -->
+        <!-- Fallback content if Vue fails to load -->
+        <noscript>
+            <p>このページを表示するにはJavaScriptを有効にしてください。</p>
+        </noscript>
+        <div v-if="!vueLoaded" style="text-align: center; padding: 20px;">
+            <p>アプリケーションを読み込んでいます...</p>
+        </div>
+    </div>
 
     <!-- Custom JavaScript -->
     <script type="module" src="main.js"></script>
