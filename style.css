@@ -1,0 +1,88 @@
+/* General body styling */
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Full viewport height */
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Header Styling */
+.header {
+    background-color: #001529; /* Ant Design default dark background */
+    padding: 0 20px;
+    color: white;
+    height: 64px; /* Default Ant Design header height */
+    display: flex;
+    align-items: center;
+    flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 20px;
+}
+
+/* Main application layout */
+.app-layout {
+    display: flex;
+    flex-grow: 1; /* Allow this container to grow and fill available space */
+    overflow: hidden; /* Prevent scrolling at this level, manage within sidebar/content */
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 250px; /* Adjust width as needed */
+    background-color: #fff; /* Default Ant Design menu background */
+    border-right: 1px solid #f0f0f0; /* Ant Design default border color */
+    padding: 16px 0; /* Padding for the menu items */
+    overflow-y: auto; /* Enable vertical scrolling for sidebar if content overflows */
+    flex-shrink: 0; /* Prevent sidebar from shrinking */
+}
+
+.sidebar .ant-menu {
+    border-right: none; /* Remove default Ant Design menu border if sidebar has its own */
+}
+
+/* Content Area Styling */
+.content-area {
+    flex-grow: 1; /* Allow content area to take up remaining space */
+    padding: 24px; /* Default Ant Design content padding */
+    overflow-y: auto; /* Enable vertical scrolling for content area */
+    background-color: #f0f2f5; /* Ant Design default page background */
+}
+
+/* Styling for editor mode textarea */
+.editor-textarea {
+    width: 100%;
+    min-height: 300px;
+    font-family: monospace;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    padding: 8px;
+}
+
+/* Basic breadcrumb styling (placeholder) */
+.breadcrumbs {
+    margin-bottom: 16px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+/* Active sidebar item highlighting (placeholder) */
+.ant-menu-item-selected {
+    background-color: #e6f7ff !important; /* Light blue for selected Ant Design menu item */
+    color: #1890ff !important; /* Primary color for text */
+}
+
+.ant-menu-item-active, .ant-menu-submenu-title-active {
+     /* Ant Design might handle hover states, but you can customize if needed */
+}
