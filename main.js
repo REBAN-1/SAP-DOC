@@ -41,16 +41,35 @@ const App = {
 
     const loadDocs = () => {
       const storedDocs = localStorage.getItem(STORAGE_KEY);
+      let useInitialData = true; // 初期データを使用するかどうかのフラグ
+
       if (storedDocs) {
         try {
-          docsData.value = JSON.parse(storedDocs);
+          const parsedDocs = JSON.parse(storedDocs);
+          // ローカルストレージのデータが配列で、かつ1件以上の要素を持つか確認
+          if (Array.isArray(parsedDocs) && parsedDocs.length > 0) {
+            // さらに、各要素が期待するプロパティ(id, title, content)を持っているか簡易チェック (任意)
+            // 例えば、最初の要素だけチェックするなど
+            if (parsedDocs[0] && parsedDocs[0].id && parsedDocs[0].title && parsedDocs[0].content) {
+                docsData.value = parsedDocs;
+                useInitialData = false; // 有効なローカルストレージデータを使用
+            } else {
+                console.warn('ローカルストレージのデータ形式が不正です。初期データを使用します。');
+            }
+          } else {
+            // 空の配列や配列でないデータが保存されていた場合
+            console.log('ローカルストレージに有効なドキュメントデータがありませんでした。初期データを使用します。');
+          }
         } catch (e) {
           console.error('ローカルストレージのデータの解析に失敗しました:', e);
-          docsData.value = [...initialDocs]; // パース失敗時は初期データ
+          // パース失敗時も初期データを使用 (useInitialDataは既にtrue)
         }
-      } else {
+      }
+
+      if (useInitialData) {
         docsData.value = [...initialDocs];
       }
+
       // デフォルトで最初のドキュメントを選択 (もしあれば)
       if (docsData.value.length > 0 && !selectedDocId.value) {
         selectedDocId.value = docsData.value[0].id;
